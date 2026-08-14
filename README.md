@@ -181,7 +181,7 @@ Example response:
       "description": "An ergonomic mouse that reduces hand strain."
     }
   ],
-  "totalElements": 8,
+  "totalElements": 7,
   "totalPages": 1
 }
 ```
@@ -252,8 +252,6 @@ The Products API also supports operations such as searching, updating, deleting,
 - `DELETE /api/products/{id}`
 - `PATCH /api/products/{id}/stock`
 - `PATCH /api/products/stock/bulk`
-
-The Products API also supports operations such as searching, updating, deleting, and changing product stock:
 
 
 ```bash
