@@ -223,7 +223,7 @@ curl -X POST http://localhost:8080/api/products \
     "category": "Testing",
     "price": 10.00,
     "stockQuantity": 5,
-    "description": "Produto para teste"
+    "description": "Test Product"
   }'
 ```
 
@@ -237,7 +237,7 @@ Example response:
   "category": "Testing",
   "price": 10.00,
   "stockQuantity": 5,
-  "description": "Produto para teste"
+  "description": "Test Product"
 }
 ```
 
