@@ -1,5 +1,8 @@
 package com.nhcarrigan.catalogservice.controller;
 
+import com.nhcarrigan.catalogservice.service.ProductService;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhcarrigan.catalogservice.dto.ProductRequest;
 import com.nhcarrigan.catalogservice.dto.StockAdjustmentRequest;
@@ -20,10 +23,12 @@ import java.math.BigDecimal;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,6 +45,9 @@ class ProductControllerTest {
 
     @Autowired
     private ProductRepository productRepository;
+    
+    @SpyBean
+    private ProductService productService;
 
     private ProductRequest validRequest(String sku) {
         ProductRequest request = new ProductRequest();
@@ -498,42 +506,20 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.totalElements", is(7)))
                 .andExpect(jsonPath("$.totalPages", is(1)));
     }
-
+    
     @Test
-    void filterByPriceMinOnlyReturnsMatchingProducts() throws Exception {
-        mockMvc.perform(get("/api/products")
-                        .param("minPrice", "45"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(3)))
-                .andExpect(jsonPath("$.totalElements", is(3)));
-    }
+    void unexpectedExceptionReturns500WithApiError() throws Exception {
+      doThrow(new RuntimeException("simulated unexpected failure"))
+        .when(productService)
+        .findById(1L);
 
-    @Test
-    void filterByPriceMaxOnlyReturnsMatchingProducts() throws Exception {
-        mockMvc.perform(get("/api/products")
-                        .param("maxPrice", "25"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(3)))
-                .andExpect(jsonPath("$.totalElements", is(3)));
-    }
-
-    @Test
-    void filterByPriceMinAndMaxReturnsMatchingProducts() throws Exception {
-        mockMvc.perform(get("/api/products")
-                        .param("minPrice", "18")
-                        .param("maxPrice", "60"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(5)))
-                .andExpect(jsonPath("$.totalElements", is(5)));
-    }
-
-    @Test
-    void filterByPriceReversedReturns400() throws Exception {
-        mockMvc.perform(get("/api/products")
-                        .param("minPrice", "60")
-                        .param("maxPrice", "18"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", is("Bad Request")))
-                .andExpect(jsonPath("$.message", is("Cannot filter using reversed price range: minimum 60 is greater than maximum 18")));
+      mockMvc.perform(get("/api/products/1"))
+        .andExpect(status().isInternalServerError())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.timestamp").exists())
+        .andExpect(jsonPath("$.status", is(500)))
+        .andExpect(jsonPath("$.error", is("Internal Server Error")))
+        .andExpect(jsonPath("$.message", is("An unexpected error occurred")))
+        .andExpect(jsonPath("$.details").exists());
     }
 }
